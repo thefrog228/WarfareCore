@@ -1,0 +1,34 @@
+name: WarfareCore
+version: '${version}'
+main: me.warfare.core.WarfareCore
+api-version: '1.21'
+authors: [Warfare]
+description: Anarchy core plugin with custom claims, TNT tiers, and modular systems.
+website: https://warfare.me
+
+# A single root command. All functionality is exposed through subcommands
+# dispatched by CommandManager, so we only declare one command here.
+commands:
+  warfare:
+    description: Root command for WarfareCore.
+    usage: /warfare <subcommand>
+    aliases: [wc, wcore]
+
+# Permissions are declared here for defaults, but the *string* each subcommand
+# checks is read from config.yml so server owners can rename permission nodes.
+permissions:
+  warfare.admin:
+    description: Grants access to all WarfareCore admin subcommands.
+    default: op
+  warfare.command.reload:
+    description: Allows reloading the WarfareCore configuration.
+    default: op
+  warfare.command.give:
+    description: Allows giving custom WarfareCore items.
+    default: op
+  warfare.command.loot:
+    description: Allows managing loot chests.
+    default: op
+  warfare.claims.bypass:
+    description: Bypasses all claim protection.
+    default: op

@@ -1,0 +1,54 @@
+plugins {
+    id 'java'
+    // Shadow lets us bundle libraries later (e.g. a DB driver) without server-side install.
+    id 'com.gradleup.shadow' version '8.3.5'
+}
+
+group = 'me.warfare'
+version = '1.0.0'
+
+java {
+    // Paper 1.21.x requires Java 21.
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'papermc'
+        url = 'https://repo.papermc.io/repository/maven-public/'
+    }
+}
+
+dependencies {
+    // Paper API. compileOnly because the server provides it at runtime.
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+}
+
+tasks {
+    compileJava {
+        options.encoding = 'UTF-8'
+        options.release = 21
+    }
+
+    // Replace ${version} etc. in plugin.yml at build time.
+    processResources {
+        def props = [version: version]
+        inputs.properties(props)
+        filteringCharset = 'UTF-8'
+        filesMatching('plugin.yml') {
+            expand(props)
+        }
+    }
+
+    // Make `build` produce the shaded jar so future libs are bundled.
+    build {
+        dependsOn shadowJar
+    }
+
+    shadowJar {
+        archiveClassifier.set('')
+    }
+}

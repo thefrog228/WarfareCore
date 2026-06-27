@@ -1,0 +1,189 @@
+# =====================================================================
+#  WarfareCore configuration
+#  ---------------------------------------------------------------
+#  This file grows phase by phase. Keys are grouped by system so the
+#  file stays navigable as features are added. Do not remove the
+#  config-version key; it is used for automatic migrations later.
+# =====================================================================
+
+# Internal schema version. Do not edit by hand.
+config-version: 1
+
+# ---------------------------------------------------------------------
+# Storage
+# ---------------------------------------------------------------------
+# type: which backend persists claim/plugin data.
+#   Supported now:  YAML
+#   Planned (stubbed behind the same interface): SQLITE
+storage:
+  type: YAML
+  # Folder (relative to the plugin data folder) for flat-file storage.
+  yaml:
+    folder: data
+
+# ---------------------------------------------------------------------
+# Messages
+# ---------------------------------------------------------------------
+# All player-facing text. Supports BOTH MiniMessage tags (e.g. <red>,
+# <gradient:#ff0000:#00ff00>) and legacy ampersand codes (e.g. &c, &a).
+# MiniMessage is recommended. The prefix is prepended to most messages.
+messages:
+  prefix: "<gradient:#ff5555:#ffaa00>WarfareCore</gradient> <dark_gray>»</dark_gray> "
+  # Whether to show the prefix on plugin messages.
+  use-prefix: true
+  no-permission: "<red>You don't have permission to do that."
+  player-only: "<red>This command can only be used by players."
+  unknown-command: "<red>Unknown subcommand. Try <yellow>/warfare</yellow>."
+  reload-success: "<green>Configuration reloaded successfully."
+  reload-failed: "<red>Reload failed. Check the console for details."
+  # Claim system
+  claim-created: "<green>Claim created and protected."
+  claim-limit-reached: "<red>You have reached your claim limit."
+  claim-overlap: "<red>That would overlap someone else's claim."
+  claim-world-disabled: "<red>Claims are disabled in this world."
+  claim-protected: "<red>This area is protected by a claim."
+
+# ---------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------
+# Permission node each subcommand requires. Renaming the value here
+# changes the node the plugin checks, letting you fit existing perm setups.
+commands:
+  reload:
+    permission: warfare.command.reload
+  give:
+    permission: warfare.command.give
+  loot:
+    permission: warfare.command.loot
+
+# ---------------------------------------------------------------------
+# Custom items
+# ---------------------------------------------------------------------
+# Each item is built on a vanilla material and tagged with a hidden
+# identifier in its data, so renaming or repacking never breaks detection.
+# model-data is the CustomModelData your resource pack will target. With no
+# pack installed the items still work and stack correctly; the numbers below
+# are placeholders you can point a future pack at (or change to match it).
+# display-name supports MiniMessage and legacy '&' codes.
+items:
+  claim_block:
+    material: BEDROCK
+    model-data: 1001
+    display-name: "<gradient:#55ffff:#5555ff>Claim Block</gradient>"
+  advanced_claim_block:
+    material: BEDROCK
+    model-data: 1002
+    display-name: "<gradient:#ffaa00:#ff5555>Advanced Claim Block</gradient>"
+  packed_tnt:
+    material: TNT
+    model-data: 1003
+    display-name: "<color:#ff8800>Packed TNT</color>"
+  reinforced_tnt:
+    material: TNT
+    model-data: 1004
+    display-name: "<color:#ff2222>Reinforced TNT</color>"
+
+# ---------------------------------------------------------------------
+# Recipes
+# ---------------------------------------------------------------------
+# Toggle each plugin recipe. Packed TNT is a fixed 3x3 of vanilla TNT.
+# Reinforced TNT surrounds a configurable core block with Packed TNT.
+recipes:
+  packed_tnt:
+    enabled: true
+  reinforced_tnt:
+    enabled: true
+    core-material: OBSIDIAN
+
+# ---------------------------------------------------------------------
+# Explosions
+# ---------------------------------------------------------------------
+# The plugin fully controls TNT block destruction; vanilla blast
+# resistance is never used. Each tier has its own radius. Shape and
+# drops default to vanilla-like behaviour (spherical, items drop).
+explosions:
+  # true = clear a flat cube; false = spherical blast (vanilla-like).
+  shape-cube: false
+  # true = destroyed blocks drop items like vanilla TNT.
+  drop-items: true
+  normal:
+    radius: 5
+  packed:
+    radius: 7
+  reinforced:
+    radius: 9
+  # Blocks that require PACKED TNT or stronger to break (obsidian-class).
+  # Empty list falls back to the built-in defaults shown here.
+  strong-blocks:
+    - OBSIDIAN
+    - CRYING_OBSIDIAN
+    - RESPAWN_ANCHOR
+  # Blocks no TNT tier may ever break. Note: claim blocks are handled by
+  # claim logic (only REINFORCED breaks them), independent of this list.
+  never-break:
+    - BEDROCK
+    - BARRIER
+    - END_PORTAL_FRAME
+
+# ---------------------------------------------------------------------
+# Loot chests
+# ---------------------------------------------------------------------
+# Registered chests auto-refill on a fixed timer. Bind a chest to a table
+# in-game with: /warfare loot create <table> (while looking at the chest).
+loot:
+  # Default refill interval for newly created chests (seconds). 900 = 15 min.
+  default-interval-seconds: 900
+  # How often the refill scheduler checks for due chests (seconds).
+  check-interval-seconds: 30
+  # true = wipe the chest and refill; false = only top up empty slots.
+  wipe-on-refill: true
+  # Protection for registered loot chests.
+  protection:
+    break: true       # players cannot break loot chests
+    explosions: true  # explosions cannot destroy loot chests
+  # Loot tables. Each table picks `rolls` weighted items per refill and
+  # places them in random slots. `item` accepts custom item names
+  # (CLAIM_BLOCK, ADVANCED_CLAIM_BLOCK, PACKED_TNT, REINFORCED_TNT) or any
+  # vanilla material (DIAMOND, GOLDEN_APPLE, ...). Higher weight = more common.
+  tables:
+    coliseum:
+      rolls: 6
+      items:
+        - { item: CLAIM_BLOCK,          min: 1, max: 2, weight: 20 }
+        - { item: ADVANCED_CLAIM_BLOCK, min: 1, max: 1, weight: 5 }
+        - { item: PACKED_TNT,           min: 2, max: 6, weight: 25 }
+        - { item: REINFORCED_TNT,       min: 1, max: 2, weight: 8 }
+        - { item: TNT,                  min: 4, max: 12, weight: 30 }
+        - { item: GOLDEN_APPLE,         min: 1, max: 3, weight: 15 }
+        - { item: DIAMOND,              min: 1, max: 4, weight: 12 }
+        - { item: ARROW,                min: 8, max: 16, weight: 18 }
+
+
+# ---------------------------------------------------------------------
+# Claims
+# ---------------------------------------------------------------------
+# Protection radii per claim type (in blocks, measured from the center
+# Claim Block on the X/Z plane) and the per-player placement limit.
+# Enforcement of these values is wired in a later phase; they are defined
+# here so the data model and storage already understand them.
+claims:
+  # Maximum claims a single player may have placed at once.
+  max-per-player: 3
+  radius:
+    normal: 16
+    advanced: 32
+  # Worlds where claims may be created. Empty list = all worlds allowed.
+  enabled-worlds: []
+  # Permission node that bypasses ALL claim protection (for staff).
+  bypass-permission: warfare.claims.bypass
+  # Per-rule protection toggles. Each can be turned off independently.
+  protection:
+    break: true       # non-owners cannot break blocks
+    place: true       # non-owners cannot place blocks
+    buckets: true     # non-owners cannot use buckets
+    interact: true    # non-owners cannot interact (chests, doors, etc.)
+    pistons: true     # pistons cannot move claimed blocks across borders
+    fluids: true      # water/lava cannot flow into claims
+    fire: true        # fire cannot spread to or burn claimed blocks
+    explosions: true  # ordinary explosions cannot remove claimed blocks
+
